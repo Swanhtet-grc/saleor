@@ -3,8 +3,7 @@ pipeline {
   stages {
     stage('build Saleor') {
       steps {
-        sh '''docker-compose build
-docker-compose up'''
+        sh 'docker-compose up'
       }
     }
 
