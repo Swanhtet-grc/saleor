@@ -3,19 +3,19 @@ pipeline {
   stages {
     stage('build Saleor') {
       steps {
-        sh 'docker-compose up'
+        sh 'echo "built Saleor"'
       }
     }
 
     stage('build Dashboard') {
       steps {
-        sh 'echo "yes"'
+        sh 'echo "Dashboard"'
       }
     }
 
     stage('build StoreFront') {
       steps {
-        sh 'echo "build storefront"'
+        sh 'echo "built Storefront"'
       }
     }
 
