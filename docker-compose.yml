@@ -5,7 +5,7 @@ services:
     ports:
       - 8000:8000
     build:
-      context: ./saleor
+      context: .
       dockerfile: ./Dockerfile
       args:
         STATIC_URL: '/static/'
@@ -17,9 +17,9 @@ services:
       - redis
       - jaeger
     volumes:
-      - ./saleor/saleor/:/app/saleor:Z
-      - ./saleor/templates/:/app/templates:Z
-      - ./saleor/tests/:/app/tests
+      - ./saleor/:/app/saleor:Z
+      - ./templates/:/app/templates:Z
+      - ./tests/:/app/tests
       # shared volume between worker and api for media
       - saleor-media:/app/media
     command: python manage.py runserver 0.0.0.0:8000
@@ -55,7 +55,7 @@ services:
 
   worker:
     build:
-      context: ./saleor
+      context: .
       dockerfile: ./Dockerfile
       args:
         STATIC_URL: '/static/'
@@ -67,8 +67,8 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./saleor/saleor/:/app/saleor:Z,cached
-      - ./saleor/templates/:/app/templates:Z,cached
+      - ./saleor/:/app/saleor:Z,cached
+      - ./templates/:/app/templates:Z,cached
       # shared volume between worker and api for media
       - saleor-media:/app/media
 
