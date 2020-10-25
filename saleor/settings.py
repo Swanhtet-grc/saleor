@@ -19,7 +19,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 CORS_ALLOW_CREDENTIALS=True
 CORS_ALLOWED_ORIGINS = [
-'https://swan-eshop.herokuapp.com'
+'https://swan-eshop.herokuapp.com',
+'http://localhost:3000',
+'http://localhost:9000',
 ]
 def get_list(text):
     return [item.strip() for item in text.split(",")]
