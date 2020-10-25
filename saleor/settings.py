@@ -17,7 +17,7 @@ from pytimeparse import parse
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
-
+CORS_ALLOW_ALL_ORIGINS=True
 def get_list(text):
     return [item.strip() for item in text.split(",")]
 
@@ -205,6 +205,7 @@ if not SECRET_KEY and DEBUG:
     SECRET_KEY = get_random_secret_key()
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.common.CommonMiddleware",
     "saleor.core.middleware.request_time",
@@ -260,6 +261,7 @@ INSTALLED_APPS = [
     "django_countries",
     "django_filters",
     "phonenumber_field",
+    "corsheaders",
 ]
 
 
@@ -576,5 +578,4 @@ JWT_TTL_REFRESH = timedelta(seconds=parse(os.environ.get("JWT_TTL_REFRESH", "30 
 JWT_TTL_REQUEST_EMAIL_CHANGE = timedelta(
     seconds=parse(os.environ.get("JWT_TTL_REQUEST_EMAIL_CHANGE", "1 hour")),
 )
-CORS_ORIGIN_ALLOW_ALL = True
 
