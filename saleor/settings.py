@@ -17,7 +17,10 @@ from pytimeparse import parse
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
-CORS_ALLOW_ALL_ORIGINS=True
+CORS_ALLOW_CREDENTIALS=True
+CORS_ALLOWED_ORIGINS = [
+'https://swan-eshop.herokuapp.com'
+]
 def get_list(text):
     return [item.strip() for item in text.split(",")]
 
