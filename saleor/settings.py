@@ -47,8 +47,11 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-_DEFAULT_CLIENT_HOSTS = "localhost,127.0.0.1, https://swan-eshop.herokuapp.com/,*"
-CORS_ORIGIN_ALLOW_ALL=True
+_DEFAULT_CLIENT_HOSTS = "localhost,127.0.0.1, https://swan-eshop.herokuapp.com"
+
+CORS_ALLOWED_ORIGINS = [
+    "https://swan-eshop.herokuapp.com",
+]
 ALLOWED_CLIENT_HOSTS = os.environ.get("ALLOWED_CLIENT_HOSTS")
 if not ALLOWED_CLIENT_HOSTS:
     if DEBUG:
