@@ -52,6 +52,8 @@ _DEFAULT_CLIENT_HOSTS = "localhost,127.0.0.1, https://swan-eshop.herokuapp.com"
 CORS_ALLOWED_ORIGINS = [
     "https://swan-eshop.herokuapp.com",
 ]
+CORS_ALLOW_CREDENTIALS = True
+
 ALLOWED_CLIENT_HOSTS = os.environ.get("ALLOWED_CLIENT_HOSTS")
 if not ALLOWED_CLIENT_HOSTS:
     if DEBUG:
