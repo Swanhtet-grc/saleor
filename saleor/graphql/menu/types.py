@@ -24,7 +24,7 @@ class Menu(CountableDjangoObjectType):
             "through the store."
         )
         interfaces = [relay.Node]
-        only_fields = ["id", "name"]
+        only_fields = ["id", "name", "slug"]
         model = models.Menu
 
     @staticmethod
@@ -96,5 +96,9 @@ class MenuItemMoveInput(graphene.InputObjectType):
         description="ID of the parent menu. If empty, menu will be top level menu."
     )
     sort_order = graphene.Int(
-        description="Sorting position of the menu item (from 0 to x)."
+        description=(
+            "The new relative sorting position of the item (from -inf to +inf). "
+            "1 moves the item one position forward, -1 moves the item one position "
+            "backward, 0 leaves the item unchanged."
+        )
     )

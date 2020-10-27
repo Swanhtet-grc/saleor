@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import graphene
 import pytest
 
@@ -7,6 +9,7 @@ from ....product.models import (
     AttributeVariant,
     Product,
     ProductType,
+    ProductVariant,
 )
 from ...tests.utils import get_graphql_content
 
@@ -50,7 +53,14 @@ def attributes_for_pagination(collection, category):
 
     product_type = ProductType.objects.create(name="My Product Type")
     product = Product.objects.create(
-        name="Test product", product_type=product_type, category=category,
+        name="Test product",
+        product_type=product_type,
+        category=category,
+        is_published=True,
+        visible_in_listings=True,
+    )
+    ProductVariant.objects.create(
+        product=product, sku="testVariant", price_amount=Decimal(10)
     )
     collection.products.add(product)
     AttributeVariant.objects.bulk_create(

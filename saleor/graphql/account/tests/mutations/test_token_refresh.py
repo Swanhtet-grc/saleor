@@ -2,15 +2,15 @@ from datetime import datetime
 
 from django.middleware.csrf import _get_new_csrf_token
 from freezegun import freeze_time
-from jwt import decode
 
 from .....account.error_codes import AccountErrorCode
 from .....core.jwt import (
     JWT_ACCESS_TYPE,
-    JWT_ALGORITHM,
     JWT_REFRESH_TOKEN_COOKIE_NAME,
     create_access_token,
+    create_access_token_for_app,
     create_refresh_token,
+    jwt_decode,
 )
 from ....tests.utils import get_graphql_content
 
@@ -42,7 +42,7 @@ def test_refresh_token_get_token_from_cookie(api_client, customer_user, settings
     assert not errors
     token = data.get("token")
     assert token
-    payload = decode(token, settings.SECRET_KEY, algorithms=JWT_ALGORITHM)
+    payload = jwt_decode(token)
     assert payload["email"] == customer_user.email
     assert datetime.fromtimestamp(payload["iat"]) == datetime.utcnow()
     assert (
@@ -67,7 +67,7 @@ def test_refresh_token_get_token_from_input(api_client, customer_user, settings)
     assert not errors
     token = data.get("token")
     assert token
-    payload = decode(token, settings.SECRET_KEY, algorithms=JWT_ALGORITHM)
+    payload = jwt_decode(token)
     assert payload["email"] == customer_user.email
     assert datetime.fromtimestamp(payload["iat"]) == datetime.utcnow()
     assert (
@@ -97,6 +97,24 @@ def test_access_token_used_as_a_refresh_token(api_client, customer_user):
     access_token = create_access_token(customer_user, {"csrfToken": csrf_token})
 
     variables = {"token": access_token, "csrf_token": csrf_token}
+    response = api_client.post_graphql(MUTATION_TOKEN_REFRESH, variables)
+    content = get_graphql_content(response)
+
+    data = content["data"]["tokenRefresh"]
+    errors = data["accountErrors"]
+
+    token = data.get("token")
+    assert not token
+
+    assert len(errors) == 1
+    assert errors[0]["code"] == AccountErrorCode.JWT_INVALID_TOKEN.name
+
+
+def test_access_app_token_used_as_a_refresh_token(api_client, app, customer_user):
+    csrf_token = _get_new_csrf_token()
+    access_app_token = create_access_token_for_app(app, customer_user)
+
+    variables = {"token": access_app_token, "csrf_token": csrf_token}
     response = api_client.post_graphql(MUTATION_TOKEN_REFRESH, variables)
     content = get_graphql_content(response)
 

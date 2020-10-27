@@ -22,17 +22,19 @@ from ..core.filters import EnumFilter, ListObjectTypeFilter, ObjectTypeFilter
 from ..core.types import FilterInputObjectType
 from ..core.types.common import IntRangeInput, PriceRangeInput
 from ..core.utils import from_global_id_strict_type
-from ..utils import get_nodes, resolve_global_ids_to_primary_keys
+from ..utils import (
+    get_nodes,
+    get_user_or_app_from_context,
+    resolve_global_ids_to_primary_keys,
+)
 from ..utils.filters import filter_by_query_param, filter_range_field
 from ..warehouse import types as warehouse_types
-from . import types
 from .enums import (
     CollectionPublished,
     ProductTypeConfigurable,
     ProductTypeEnum,
     StockAvailability,
 )
-from .types.attributes import AttributeInput
 
 
 def filter_fields_containing_value(*search_fields: str):
@@ -141,7 +143,7 @@ def filter_attributes(qs, _, value):
 
 def filter_categories(qs, _, value):
     if value:
-        categories = get_nodes(value, types.Category)
+        categories = get_nodes(value, "Category", Category)
         qs = filter_products_by_categories(qs, categories)
     return qs
 
@@ -152,7 +154,7 @@ def filter_has_category(qs, _, value):
 
 def filter_collections(qs, _, value):
     if value:
-        collections = get_nodes(value, types.Collection)
+        collections = get_nodes(value, "Collection", Collection)
         qs = filter_products_by_collections(qs, collections)
     return qs
 
@@ -208,9 +210,11 @@ def filter_product_type(qs, _, value):
     return qs
 
 
-def filter_attributes_by_product_types(qs, field, value):
+def filter_attributes_by_product_types(qs, field, value, requestor):
     if not value:
         return qs
+
+    product_qs = Product.objects.visible_to_user(requestor)
 
     if field == "in_category":
         category_id = from_global_id_strict_type(
@@ -222,13 +226,16 @@ def filter_attributes_by_product_types(qs, field, value):
             return qs.none()
 
         tree = category.get_descendants(include_self=True)
-        product_qs = Product.objects.filter(category__in=tree)
+        product_qs = product_qs.filter(category__in=tree)
+
+        if not product_qs.user_has_access_to_all(requestor):
+            product_qs = product_qs.exclude(visible_in_listings=False)
 
     elif field == "in_collection":
         collection_id = from_global_id_strict_type(
             value, only_type="Collection", field=field
         )
-        product_qs = Product.objects.filter(collections__id=collection_id)
+        product_qs = product_qs.filter(collections__id=collection_id)
 
     else:
         raise NotImplementedError(f"Filtering by {field} is unsupported")
@@ -258,6 +265,10 @@ def filter_warehouses(qs, _, value):
         )
         return qs.filter(variants__stocks__warehouse__pk__in=warehouse_pks)
     return qs
+
+
+def filter_sku_list(qs, _, value):
+    return qs.filter(sku__in=value)
 
 
 def filter_quantity(qs, quantity_value, warehouses=None):
@@ -305,7 +316,8 @@ class ProductFilter(django_filters.FilterSet):
         field_name="minimal_price_amount",
     )
     attributes = ListObjectTypeFilter(
-        input_class=AttributeInput, method=filter_attributes
+        input_class="saleor.graphql.product.types.attributes.AttributeInput",
+        method=filter_attributes,
     )
     stock_availability = EnumFilter(
         input_class=StockAvailability, method=filter_stock_availability
@@ -314,6 +326,7 @@ class ProductFilter(django_filters.FilterSet):
     product_types = GlobalIDMultipleChoiceFilter(field_name="product_type")
     stocks = ObjectTypeFilter(input_class=ProductStockFilterInput, method=filter_stocks)
     search = django_filters.CharFilter(method=filter_search)
+    ids = GlobalIDMultipleChoiceFilter(field_name="id")
 
     class Meta:
         model = Product
@@ -328,6 +341,17 @@ class ProductFilter(django_filters.FilterSet):
             "stocks",
             "search",
         ]
+
+
+class ProductVariantFilter(django_filters.FilterSet):
+    search = django_filters.CharFilter(
+        method=filter_fields_containing_value("name", "product__name", "sku")
+    )
+    sku = ListObjectTypeFilter(input_class=graphene.String, method=filter_sku_list)
+
+    class Meta:
+        model = ProductVariant
+        fields = ["search", "sku"]
 
 
 class CollectionFilter(django_filters.FilterSet):
@@ -379,8 +403,8 @@ class AttributeFilter(django_filters.FilterSet):
     )
     ids = GlobalIDMultipleChoiceFilter(field_name="id")
 
-    in_collection = GlobalIDFilter(method=filter_attributes_by_product_types)
-    in_category = GlobalIDFilter(method=filter_attributes_by_product_types)
+    in_collection = GlobalIDFilter(method="filter_in_collection")
+    in_category = GlobalIDFilter(method="filter_in_category")
 
     class Meta:
         model = Attribute
@@ -393,10 +417,23 @@ class AttributeFilter(django_filters.FilterSet):
             "available_in_grid",
         ]
 
+    def filter_in_collection(self, queryset, name, value):
+        requestor = get_user_or_app_from_context(self.request)
+        return filter_attributes_by_product_types(queryset, name, value, requestor)
+
+    def filter_in_category(self, queryset, name, value):
+        requestor = get_user_or_app_from_context(self.request)
+        return filter_attributes_by_product_types(queryset, name, value, requestor)
+
 
 class ProductFilterInput(FilterInputObjectType):
     class Meta:
         filterset_class = ProductFilter
+
+
+class ProductVariantFilterInput(FilterInputObjectType):
+    class Meta:
+        filterset_class = ProductVariantFilter
 
 
 class CollectionFilterInput(FilterInputObjectType):

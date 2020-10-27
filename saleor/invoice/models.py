@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.db.models import JSONField  # type: ignore
 from django.utils.timezone import now
 
 from ..core import JobStatus
@@ -67,7 +67,7 @@ class InvoiceEvent(models.Model):
     parameters = JSONField(blank=True, default=dict, encoder=CustomJsonEncoder)
 
     class Meta:
-        ordering = ("date",)
+        ordering = ("date", "pk")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(type={self.type!r}, user={self.user!r})"

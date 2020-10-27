@@ -2,9 +2,17 @@ from copy import copy
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse
 from django_countries.fields import Country
 from prices import Money, MoneyRange, TaxedMoney, TaxedMoneyRange
 
+from ..payment.interface import (
+    CustomerSource,
+    GatewayResponse,
+    PaymentData,
+    PaymentGateway,
+)
 from .models import PluginConfiguration
 
 if TYPE_CHECKING:
@@ -16,7 +24,6 @@ if TYPE_CHECKING:
     from ..account.models import Address, User
     from ..order.models import Fulfillment, OrderLine, Order
     from ..invoice.models import Invoice
-    from ..payment.interface import GatewayResponse, PaymentData, CustomerSource
 
 
 PluginConfigurationType = List[dict]
@@ -56,6 +63,13 @@ class BasePlugin:
 
     def __str__(self):
         return self.PLUGIN_NAME
+
+    def webhook(self, request: WSGIRequest, path: str, previous_value) -> HttpResponse:
+        """Handle received http request.
+
+        Overwrite this method if the plugin expects the incoming requests.
+        """
+        return NotImplemented
 
     def change_user_address(
         self,
@@ -239,7 +253,10 @@ class BasePlugin:
         return NotImplemented
 
     def assign_tax_code_to_object_meta(
-        self, obj: Union["Product", "ProductType"], tax_code: str, previous_value: Any
+        self,
+        obj: Union["Product", "ProductType"],
+        tax_code: Optional[str],
+        previous_value: Any,
     ):
         """Assign tax code dedicated to plugin."""
         return NotImplemented
@@ -272,6 +289,14 @@ class BasePlugin:
 
         Overwrite this method if you need to trigger specific logic after a product is
         created.
+        """
+        return NotImplemented
+
+    def product_updated(self, product: "Product", previous_value: Any) -> Any:
+        """Trigger when product is updated.
+
+        Overwrite this method if you need to trigger specific logic after a product is
+        updated.
         """
         return NotImplemented
 
@@ -317,6 +342,28 @@ class BasePlugin:
         """
         return NotImplemented
 
+    # Deprecated. This method will be removed in Saleor 3.0
+    def checkout_quantity_changed(
+        self, checkout: "Checkout", previous_value: Any
+    ) -> Any:
+        return NotImplemented
+
+    def checkout_created(self, checkout: "Checkout", previous_value: Any) -> Any:
+        """Trigger when checkout is created.
+
+        Overwrite this method if you need to trigger specific logic when a checkout is
+        created.
+        """
+        return NotImplemented
+
+    def checkout_updated(self, checkout: "Checkout", previous_value: Any) -> Any:
+        """Trigger when checkout is updated.
+
+        Overwrite this method if you need to trigger specific logic when a checkout is
+        updated.
+        """
+        return NotImplemented
+
     def fetch_taxes_data(self, previous_value: Any) -> Any:
         """Triggered when ShopFetchTaxRates mutation is called."""
         return NotImplemented
@@ -327,6 +374,11 @@ class BasePlugin:
         return NotImplemented
 
     def capture_payment(
+        self, payment_information: "PaymentData", previous_value
+    ) -> "GatewayResponse":
+        return NotImplemented
+
+    def void_payment(
         self, payment_information: "PaymentData", previous_value
     ) -> "GatewayResponse":
         return NotImplemented
@@ -359,6 +411,30 @@ class BasePlugin:
 
     def get_supported_currencies(self, previous_value):
         return NotImplemented
+
+    def token_is_required_as_payment_input(self, previous_value):
+        return previous_value
+
+    def get_payment_gateway(
+        self, currency: Optional[str], previous_value
+    ) -> Optional["PaymentGateway"]:
+        payment_config = self.get_payment_config(previous_value)
+        payment_config = payment_config if payment_config != NotImplemented else []
+        currencies = self.get_supported_currencies(previous_value=[])
+        currencies = currencies if currencies != NotImplemented else []
+        if currency and currency not in currencies:
+            return None
+        return PaymentGateway(
+            id=self.PLUGIN_ID,
+            name=self.PLUGIN_NAME,
+            config=payment_config,
+            currencies=currencies,
+        )
+
+    def get_payment_gateway_for_checkout(
+        self, checkout: "Checkout", previous_value,
+    ) -> Optional["PaymentGateway"]:
+        return self.get_payment_gateway(checkout.currency, previous_value)
 
     @classmethod
     def _update_config_items(

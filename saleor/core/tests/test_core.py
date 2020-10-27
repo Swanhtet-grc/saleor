@@ -8,7 +8,6 @@ from django.core.management import CommandError, call_command
 from django.db.utils import DataError
 from django.templatetags.static import static
 from django.test import RequestFactory, override_settings
-from measurement.measures import Weight
 
 from ...account.models import Address, User
 from ...account.utils import create_superuser
@@ -29,7 +28,6 @@ from ..utils import (
     get_currency_for_country,
     random_data,
 )
-from ..weight import WeightUnits, convert_weight
 
 type_schema = {
     "Vegetable": {
@@ -221,12 +219,6 @@ def test_storages_not_setting_s3_bucket_domain(storage, settings):
     assert storage.custom_domain is None
 
 
-def test_convert_weight():
-    weight = Weight(kg=1)
-    expected_result = Weight(g=1000)
-    assert convert_weight(weight, WeightUnits.GRAM) == expected_result
-
-
 def test_build_absolute_uri(site_settings, settings):
     # Case when we are using external service for storing static files,
     # eg. Amazon s3
@@ -266,6 +258,8 @@ def test_placeholder(settings):
         ("Shirt", "shirt"),
         ("40.5", "405-2"),
         ("FM1+", "fm1-2"),
+        ("زيوت", "زيوت"),
+        ("わたし-わ にっぽん です", "わたし-わ-にっぽん-です-2"),
     ],
 )
 def test_generate_unique_slug_with_slugable_field(
@@ -277,6 +271,7 @@ def test_generate_unique_slug_with_slugable_field(
         ("Paint test", "paint-2"),
         ("405", "405"),
         ("FM1", "fm1"),
+        ("わたし わ にっぽん です", "わたし-わ-にっぽん-です"),
     ]
     for name, slug in product_names_and_slugs:
         ProductType.objects.create(name=name, slug=slug)

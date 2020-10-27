@@ -100,6 +100,7 @@ def products_structures(category):
                     product_type=pt_apples,
                     category=category,
                     is_published=True,
+                    visible_in_listings=True,
                 )
                 for i, attrs in enumerate(zip(COLORS, TRADEMARKS))
             ]
@@ -118,6 +119,7 @@ def products_structures(category):
                     product_type=pt_oranges,
                     category=category,
                     is_published=True,
+                    visible_in_listings=True,
                 )
                 for i, attrs in enumerate(zip(COLORS, TRADEMARKS))
             ]
@@ -133,6 +135,7 @@ def products_structures(category):
         product_type=pt_other,
         category=category,
         is_published=True,
+        visible_in_listings=True,
     )
     product_models.ProductVariant.objects.create(
         product=dummy, sku=dummy.slug, price_amount=Decimal(10)
@@ -143,6 +146,7 @@ def products_structures(category):
         product_type=pt_other,
         category=category,
         is_published=True,
+        visible_in_listings=True,
     )
     product_models.ProductVariant.objects.create(
         product=other_dummy, sku=other_dummy.slug, price_amount=Decimal(10)
@@ -553,7 +557,7 @@ def test_sort_product_by_attribute_using_invalid_attribute_id(
 
 @pytest.mark.parametrize("direction", ["ASC", "DESC"])
 def test_sort_product_by_attribute_using_attribute_having_no_products(
-    api_client, products_structures, direction
+    api_client, product_list_published, direction
 ):
     """Ensure passing an empty attribute ID as sorting field does nothing."""
 
@@ -571,9 +575,9 @@ def test_sort_product_by_attribute_using_attribute_having_no_products(
     products = response["data"]["products"]["edges"]
 
     if direction == "ASC":
-        expected_first_product = product_models.Product.objects.first()
+        expected_first_product = product_models.Product.objects.order_by("slug").first()
     else:
-        expected_first_product = product_models.Product.objects.last()
+        expected_first_product = product_models.Product.objects.order_by("slug").last()
 
     assert len(products) == product_models.Product.objects.count()
     assert products[0]["node"]["name"] == expected_first_product.name

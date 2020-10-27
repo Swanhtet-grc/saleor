@@ -55,6 +55,50 @@ def email_sent_event(
     )
 
 
+def invoice_requested_event(*, order: Order, user: Optional[UserType],) -> OrderEvent:
+    return OrderEvent.objects.create(
+        order=order, type=OrderEvents.INVOICE_REQUESTED, user=user
+    )
+
+
+def invoice_generated_event(
+    *, order: Order, user: Optional[UserType], invoice_number: str,
+) -> OrderEvent:
+    return OrderEvent.objects.create(
+        order=order,
+        type=OrderEvents.INVOICE_GENERATED,
+        user=user,
+        parameters={"invoice_number": invoice_number},
+    )
+
+
+def invoice_updated_event(
+    *,
+    order: Order,
+    user: Optional[UserType],
+    invoice_number: str,
+    url: str,
+    status: str
+) -> OrderEvent:
+    return OrderEvent.objects.create(
+        order=order,
+        type=OrderEvents.INVOICE_UPDATED,
+        user=user,
+        parameters={"invoice_number": invoice_number, "url": url, "status": status},
+    )
+
+
+def invoice_sent_event(
+    *, order: Order, user: Optional[UserType], email: str,
+) -> OrderEvent:
+    return OrderEvent.objects.create(
+        order=order,
+        type=OrderEvents.INVOICE_SENT,
+        user=user,
+        parameters={"email": email},
+    )
+
+
 def email_resent_event(
     *, order: Order, user: UserType, email_type: OrderEventsEmails
 ) -> OrderEvent:
@@ -213,6 +257,22 @@ def payment_failed_event(
 
     return OrderEvent.objects.create(
         order=order, type=OrderEvents.PAYMENT_FAILED, user=user, parameters=parameters
+    )
+
+
+def external_notification_event(
+    *, order: Order, user: UserType, message: Optional[str], parameters: Optional[dict]
+) -> OrderEvent:
+    if not _user_is_valid(user):
+        user = None
+    parameters = parameters or {}
+    parameters["message"] = message
+
+    return OrderEvent.objects.create(
+        order=order,
+        type=OrderEvents.EXTERNAL_SERVICE_NOTIFICATION,
+        user=user,
+        parameters=parameters,
     )
 
 

@@ -109,8 +109,7 @@ def resolve_address_validation_rules(
 
 def resolve_payment_sources(user: models.User):
     stored_customer_accounts = (
-        (gtw["id"], fetch_customer_id(user, gtw["id"]))
-        for gtw in gateway.list_gateways()
+        (gtw.id, fetch_customer_id(user, gtw.id)) for gtw in gateway.list_gateways()
     )
     return list(
         chain(
@@ -156,5 +155,5 @@ def resolve_address(info, id):
 
 def resolve_permissions(root: models.User):
     permissions = get_user_permissions(root)
-    permissions = permissions.prefetch_related("content_type").order_by("codename")
+    permissions = permissions.order_by("codename")
     return format_permissions_for_display(permissions)
