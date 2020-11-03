@@ -17,6 +17,12 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
 
+CORS_ALLOW_CREDENTIALS=True
+CORS_ALLOWED_ORIGINS = [
+'https://swan-eshop.herokuapp.com',
+'http://localhost:3000',
+'http://localhost:9000',
+]
 def get_list(text):
     return [item.strip() for item in text.split(",")]
 
@@ -46,7 +52,7 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-_DEFAULT_CLIENT_HOSTS = "localhost,127.0.0.1"
+_DEFAULT_CLIENT_HOSTS = "https://swan-eshop.herokuapp.com"
 
 ALLOWED_CLIENT_HOSTS = os.environ.get("ALLOWED_CLIENT_HOSTS")
 if not ALLOWED_CLIENT_HOSTS:
@@ -263,6 +269,7 @@ INSTALLED_APPS = [
     "django_countries",
     "django_filters",
     "phonenumber_field",
+     "corsheaders",
 ]
 
 
