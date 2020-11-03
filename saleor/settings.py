@@ -53,7 +53,9 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
+
 _DEFAULT_CLIENT_HOSTS = "https://swan-eshop.herokuapp.com,https://swan-dashboard.herokuapp.com/"
+
 
 ALLOWED_CLIENT_HOSTS = os.environ.get("ALLOWED_CLIENT_HOSTS")
 if not ALLOWED_CLIENT_HOSTS:
@@ -158,7 +160,7 @@ EMAIL_USE_SSL = email_config["EMAIL_USE_SSL"]
 
 # If enabled, make sure you have set proper storefront address in ALLOWED_CLIENT_HOSTS.
 ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL = get_bool_from_env(
-    "ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL", True
+    "ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL", False
 )
 
 ENABLE_SSL = get_bool_from_env("ENABLE_SSL", False)
@@ -214,6 +216,7 @@ if not SECRET_KEY and DEBUG:
     SECRET_KEY = get_random_secret_key()
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.common.CommonMiddleware",
     "saleor.core.middleware.request_time",
@@ -270,7 +273,7 @@ INSTALLED_APPS = [
     "django_countries",
     "django_filters",
     "phonenumber_field",
-     "corsheaders",
+    "corsheaders",
 ]
 
 
@@ -399,8 +402,10 @@ TEST_RUNNER = "saleor.tests.runner.PytestTestRunner"
 
 PLAYGROUND_ENABLED = get_bool_from_env("PLAYGROUND_ENABLED", True)
 
-ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1"))
-ALLOWED_GRAPHQL_ORIGINS = get_list(os.environ.get("ALLOWED_GRAPHQL_ORIGINS", "*"))
+
+ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,"
+                                                         "172.16.20.155,*,https://swan-eshop.herokuapp.com"))
+ALLOWED_GRAPHQL_ORIGINS = os.environ.get("ALLOWED_GRAPHQL_ORIGINS", "172.16.20.155,*,https://swan-eshop.herokuapp.com")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -590,3 +595,4 @@ JWT_TTL_REFRESH = timedelta(seconds=parse(os.environ.get("JWT_TTL_REFRESH", "30 
 JWT_TTL_REQUEST_EMAIL_CHANGE = timedelta(
     seconds=parse(os.environ.get("JWT_TTL_REQUEST_EMAIL_CHANGE", "1 hour")),
 )
+
