@@ -20,6 +20,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 CORS_ALLOW_CREDENTIALS=True
 CORS_ALLOWED_ORIGINS = [
 'https://swan-eshop.herokuapp.com',
+'https://swan-dashboard.herokuapp.com/',
 'http://localhost:3000',
 'http://localhost:9000',
 ]
@@ -52,7 +53,7 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-_DEFAULT_CLIENT_HOSTS = "https://swan-eshop.herokuapp.com"
+_DEFAULT_CLIENT_HOSTS = "https://swan-eshop.herokuapp.com,https://swan-dashboard.herokuapp.com/"
 
 ALLOWED_CLIENT_HOSTS = os.environ.get("ALLOWED_CLIENT_HOSTS")
 if not ALLOWED_CLIENT_HOSTS:
